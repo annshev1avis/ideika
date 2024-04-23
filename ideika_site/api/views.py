@@ -1,81 +1,64 @@
+from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
-from api.models import Card, User, CardInUserCollection
+from api.models import Card, User, CardInUserCollection, Category
 import json
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .serializers import CategorySerializer, CardSerializer, UserSerializer
 
-def index(request): #HttpRequest
-    return HttpResponse("this is ideika API!")
-
-
-"""добавить сортировки: сначала новые, сначала старые, по алфавиту"""
-# /cards
-class CardsView(View):
-    def get(self, request):
-
-        if "collection_id" in request.GET:
-            cards = Card.objects.filter(category_id=request.GET["category_id"])
-        else:
-            cards = Card.objects.all()
-
-        cards_list = []
-        for card in cards:
-            cards_list.append({"id": card.id,
-                             "name": card.name,
-                             "desc": card.description,
-                             "own": False})
-
-        # добавляет информацию о том, если ли карточка в коллекции пользователя
-        if "user_id" in request.GET:
-            collection_ids = [c.id for c in CardInUserCollection.objects.filter(user_id=request.GET["user_id"])]
-            for i in range(len(cards_list)):
-                cards_list[i]["own"] =  cards_list[i]["id"] in collection_ids
-
-        return JsonResponse(cards_list, safe=False)
+class CategoryView(APIView):
+    def get(self, request): # request: <rest_framework.request.Request: GET '/v1/cats/'>
+        categories = Category.objects.all()
+        return Response(CategorySerializer(categories, many=True).data)
+        # Response умеет преобразовывать сериализованные данные в JSON
 
     def post(self, request):
-        body = json.loads(request.body.decode('utf-8'))
+        serializer = CategorySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        new_card = Card(name=body["name"], description=body["description"], creator_id=body["creator_id"],
-                        category_id=body["category_id"])
-        new_card.save()
+        return Response(serializer.data) # данные, которое были возвращены create()
 
-        return HttpResponse("create new card")
 
-# cards/4/
-class CardsIdView(View):
+class CardsView(APIView):
+    def get(self, request):
+        if(request.GET.get("categories_ids", None) is None):
+            return self.all_cards()
+        else:
+            return self.cards_in_category(request.GET["categories_ids"])
+
+    def all_cards(self):
+        cards = Card.objects.all()
+        return Response(CardSerializer(cards, many=True).data)
+
+    def cards_in_category(self, category_ids):
+        category_ids = list(map(int, category_ids.split(',')))
+        cards = Card.objects.filter(category_id__in=category_ids)
+        return Response(CardSerializer(cards, many=True).data)
+
+
+class OneCardView(APIView):
     def get(self, request, card_id):
-        return HttpResponse(f"get card {card_id}")
+        try:
+            card = Card.objects.get(pk=card_id)
+            return Response(CardSerializer(card).data)
+        except:
+            return Response()
 
-    def put(self, request, card_id):
-        return HttpResponse(f"update card {card_id}")
+    def patch(self, request, card_id):
+        try:
+            card = Card.objects.get(pk=card_id)
+            card.category_id = request.data["category_id"]
+            card.save()
+            return Response(CardSerializer(card).data)
+        except:
+            return Response()
 
-    def delete(self, request, card_id):
-        return HttpResponse(f"delete card {card_id}")
 
-# users/1/cards/4
-class CardUser(View):
+class UserView(APIView):
     def get(self, request, user_id):
-        cards = []
-        cards_in_collection_ids = [x.id for x in CardInUserCollection.objects.filter(user_id=user_id)]
-        watched_ids = [x.id for x in CardInUserCollection.objects.filter(is_watched=1)]
-        for card in Card.objects.filter(id__in=cards_in_collection_ids):
-            cards.append({
-                "id": card.id,
-                "name": card.name,
-                "description": card.description,
-                "watched": card.id in watched_ids
-            })
-
-        return HttpResponse(cards)
-
-    def post(self, request, user_id, card_id):
-        return HttpResponse(f"new card {card_id} for user {user_id}")
-
-
-# cards/1/tags/2
-class CardTag(View):
-    def get(self):
-        pass
-
+        user = User.objects.get(pk=user_id)
+        return Response(UserSerializer(user).data)

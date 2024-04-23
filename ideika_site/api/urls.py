@@ -1,22 +1,21 @@
-from django.urls import path
+from django.urls import path, register_converter
 from . import views
+from . import converters
 from django.views.decorators.csrf import csrf_exempt
 
 
 """
-TODO: убрать csrf_exempt()
-временно все функции обернуты в csrf_exempt(func), чтобы был отключен встроеннный 
-механизм защиты от csrf-атак. Он заключается в том, при каждой новой сессии пользователю
-выдается токен, без которого не проходят POST, PUT, DELETE запросы.
-Чтобы облегчить тестирование, защита выключена
-
-https://stackoverflow.com/questions/50732815/how-to-use-csrf-token-in-django-restful-api-and-react
+https://docs.djangoproject.com/en/5.0/topics/http/urls/#passing-extra-options-to-view-functions
+как дополнительно передавать аргументы в view
 """
 
 urlpatterns = [
-    path('', views.index),
-    path('cards/', csrf_exempt(views.CardsView.as_view())),
-    path('cards/<int:card_id>/', csrf_exempt(views.CardsIdView.as_view())),
-    path('users/<int:user_id>/cards/', csrf_exempt(views.CardUser.as_view())),
-    path('users/<int:user_id>/cards/<int:card_id>/', csrf_exempt(views.CardUser.as_view()))
+    path('categories/', views.CategoryView.as_view()),
+    path('cards/', views.CardsView.as_view()),  # все карточки
+    path('cards/<int:card_id>/', views.OneCardView.as_view()),  # отдельная карточка
+    path('users/<int:user_id>/', views.UserView.as_view()),
+    path('users/<int:user_id>/cards/', views.CategoryView.as_view()),  # коллекция
+    path('users/<int:user_id>/cards/<int:card_id>/', views.CategoryView.as_view()),  # одна карточка из коллекции
+    path('cards/<int:card_id>/tags/', views.CategoryView.as_view()),  # теги карточки
+    path('cards/<int:card_id>/tags/<int:tag_id>', views.CategoryView.as_view()),  # теги карточки
 ]

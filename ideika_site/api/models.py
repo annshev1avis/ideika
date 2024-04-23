@@ -40,6 +40,10 @@ class Card(models.Model):
     creator = models.ForeignKey('User', on_delete=models.DO_NOTHING)
 
     tags = models.ManyToManyField('Tag', blank=True, related_name="cards")
+    # users_like
+
+    # TODO
+    # прописать менеджер записей published
 
     def __str__(self):
         return self.name
