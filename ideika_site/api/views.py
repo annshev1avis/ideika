@@ -22,22 +22,23 @@ class CategoryView(APIView):
 
         return Response(serializer.data) # данные, которое были возвращены create()
 
+class CardsAPIList(generics)
 
-class CardsView(APIView):
-    def get(self, request):
-        if(request.GET.get("categories_ids", None) is None):
-            return self.all_cards()
-        else:
-            return self.cards_in_category(request.GET["categories_ids"])
-
-    def all_cards(self):
-        cards = Card.objects.all()
-        return Response(CardSerializer(cards, many=True).data)
-
-    def cards_in_category(self, category_ids):
-        category_ids = list(map(int, category_ids.split(',')))
-        cards = Card.objects.filter(category_id__in=category_ids)
-        return Response(CardSerializer(cards, many=True).data)
+# class CardsView(APIView):
+#     def get(self, request):
+#         if(request.GET.get("categories_ids", None) is None):
+#             return self.all_cards()
+#         else:
+#             return self.cards_in_category(request.GET["categories_ids"])
+#
+#     def all_cards(self):
+#         cards = Card.objects.all()
+#         return Response(CardSerializer(cards, many=True).data)
+#
+#     def cards_in_category(self, category_ids):
+#         category_ids = list(map(int, category_ids.split(',')))
+#         cards = Card.objects.filter(category_id__in=category_ids)
+#         return Response(CardSerializer(cards, many=True).data)
 
 
 class OneCardView(APIView):

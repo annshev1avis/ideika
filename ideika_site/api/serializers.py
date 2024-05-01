@@ -14,12 +14,11 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
  """
 
-class CategorySerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=50)
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "name")
 
-    def create(self, validated_data):
-        return Category.objects.create(**validated_data)
 
 class CardSerializer(serializers.ModelSerializer):
     category = SlugRelatedField(
