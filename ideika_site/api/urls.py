@@ -1,21 +1,17 @@
-from django.urls import path, register_converter
+from django.urls import path, register_converter, include, re_path
 from . import views
 from . import converters
-from django.views.decorators.csrf import csrf_exempt
 
-
-"""
-https://docs.djangoproject.com/en/5.0/topics/http/urls/#passing-extra-options-to-view-functions
-как дополнительно передавать аргументы в view
-"""
 
 urlpatterns = [
-    path('categories/', views.CategoryView.as_view()),
-    path('cards/', views.CardsView.as_view()),  # все карточки
-    path('cards/<int:card_id>/', views.OneCardView.as_view()),  # отдельная карточка
-    path('users/<int:user_id>/', views.UserView.as_view()),
-    path('users/<int:user_id>/cards/', views.CategoryView.as_view()),  # коллекция
-    path('users/<int:user_id>/cards/<int:card_id>/', views.CategoryView.as_view()),  # одна карточка из коллекции
-    path('cards/<int:card_id>/tags/', views.CategoryView.as_view()),  # теги карточки
-    path('cards/<int:card_id>/tags/<int:tag_id>', views.CategoryView.as_view()),  # теги карточки
+    path('categories/', views.CategoriesView.as_view()),
+    path('categories/<int:pk>/', views.CategoryView.as_view()),
+    path('cards/', views.CardsListCreateView.as_view()),
+    path('cards_by_cat/<int:category_id>', views.CardsByCategoryListView.as_view()),
+    path('cards/<int:pk>/', views.SingleCardView.as_view()),
+    path('users/<int:user_id>/cards/', views.UserCollection.as_view()),
+    path('users/<int:user_id>/cards/<int:card_id>/', views.UserCollection.as_view()),
+    path('tags/', views.TegsListView.as_view()),
+    path('auth/', include('djoser.urls')),
+    re_path(r'^auth/', include('djoser.urls.authtoken')),
 ]

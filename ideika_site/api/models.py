@@ -42,9 +42,6 @@ class Card(models.Model):
     tags = models.ManyToManyField('Tag', blank=True, related_name="cards")
     # users_like
 
-    # TODO
-    # прописать менеджер записей published
-
     def __str__(self):
         return self.name
 

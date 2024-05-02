@@ -2,64 +2,61 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
-from api.models import Card, User, CardInUserCollection, Category
+from api.models import Card, User, CardInUserCollection, Category, Tag
 import json
+from rest_framework import generics
+from rest_framework import mixins
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import CategorySerializer, CardSerializer, UserSerializer
+from . import serializers
 
-class CategoryView(APIView):
-    def get(self, request): # request: <rest_framework.request.Request: GET '/v1/cats/'>
-        categories = Category.objects.all()
-        return Response(CategorySerializer(categories, many=True).data)
-        # Response умеет преобразовывать сериализованные данные в JSON
+# Категории
+class CategoriesView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = serializers.CategorySerializer
 
-    def post(self, request):
-        serializer = CategorySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data) # данные, которое были возвращены create()
-
-class CardsAPIList(generics)
-
-# class CardsView(APIView):
-#     def get(self, request):
-#         if(request.GET.get("categories_ids", None) is None):
-#             return self.all_cards()
-#         else:
-#             return self.cards_in_category(request.GET["categories_ids"])
-#
-#     def all_cards(self):
-#         cards = Card.objects.all()
-#         return Response(CardSerializer(cards, many=True).data)
-#
-#     def cards_in_category(self, category_ids):
-#         category_ids = list(map(int, category_ids.split(',')))
-#         cards = Card.objects.filter(category_id__in=category_ids)
-#         return Response(CardSerializer(cards, many=True).data)
+class CategoryView(generics.RetrieveAPIView):
+    queryset = Category.objects.all()
+    serializer_class = serializers.CategorySerializer
 
 
-class OneCardView(APIView):
-    def get(self, request, card_id):
-        try:
-            card = Card.objects.get(pk=card_id)
-            return Response(CardSerializer(card).data)
-        except:
-            return Response()
 
-    def patch(self, request, card_id):
-        try:
-            card = Card.objects.get(pk=card_id)
-            card.category_id = request.data["category_id"]
-            card.save()
-            return Response(CardSerializer(card).data)
-        except:
-            return Response()
+# Карточки
+class CardsListCreateView(generics.ListCreateAPIView):
+    queryset = Card.objects.filter(is_banned=False)
+    serializer_class = serializers.CardSerializer
+
+class CardsByCategoryListView(generics.ListAPIView):
+    serializer_class = serializers.CardSerializer
+
+    def get_queryset(self):
+        cat_id = self.kwargs['category_id']
+        return Card.objects.filter(is_banned=False, category_id=cat_id)
 
 
-class UserView(APIView):
+class SingleCardView(generics.UpdateAPIView, generics.DestroyAPIView):
+    queryset = Card.objects.all()
+    serializer_class = serializers.CardSerializer
+
+
+# Коллекция пользователя
+class UserCollection(APIView):
     def get(self, request, user_id):
-        user = User.objects.get(pk=user_id)
-        return Response(UserSerializer(user).data)
+        cards = serializers.CardSerializer(User.objects.get(pk=user_id).collection_cards, many=True)
+        return Response(cards.data)
+
+    def post(self, request, user_id, card_id):
+        if len(CardInUserCollection.objects.filter(user_id=user_id, card_id=card_id)) > 0:
+            return Response({"res": "already in collection"})
+
+        CardInUserCollection.objects.create(user_id=user_id, card_id=card_id)
+        return Response({"res": "added"})
+
+    def delete(self, request, user_id, card_id):
+        CardInUserCollection.objects.filter(user_id=user_id, card_id=card_id).delete()
+        return Response({"res": "deleted"})
+
+class TegsListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = serializers.TagSerializer
