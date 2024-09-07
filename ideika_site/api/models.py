@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Message(models.Model):
     class Direction(models.IntegerChoices):
@@ -10,22 +11,20 @@ class Message(models.Model):
     is_watched = models.BooleanField(default=False)
     create_date = models.DateField(auto_now_add=True)
 
-    user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
-class User(models.Model):
-    name = models.CharField(max_length=50)
-    login = models.CharField(max_length=20, unique=True)
-    password = models.CharField(max_length=10)
-    email = models.CharField(max_length=50, unique=True, null=True)
-    registrate_date = models.DateField(auto_now_add=True)
-
-    collection_cards = models.ManyToManyField('Card', through='CardInUserCollection', related_name="users_like")
-
-    def __str__(self):
-        return self.name
+# class User(models.Model):
+#     name = models.CharField(max_length=50)
+#     login = models.CharField(max_length=20, unique=True)
+#     password = models.CharField(max_length=10)
+#     email = models.CharField(max_length=50, unique=True, null=True)
+#     registrate_date = models.DateField(auto_now_add=True)
+#
+#     def __str__(self):
+#         return self.name
 
 class CardInUserCollection(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     card = models.ForeignKey('Card', on_delete=models.CASCADE)
     is_watched = models.BooleanField(default=False)
     added_dt = models.DateTimeField(auto_now_add=True)
@@ -37,10 +36,10 @@ class Card(models.Model):
     is_banned = models.BooleanField(default=False)
 
     category = models.ForeignKey('Category', on_delete=models.PROTECT)
-    creator = models.ForeignKey('User', on_delete=models.DO_NOTHING)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
 
     tags = models.ManyToManyField('Tag', blank=True, related_name="cards")
-    # users_like
+    users_like = models.ManyToManyField(User, through='CardInUserCollection', related_name="collection_cards")
 
     def __str__(self):
         return self.name

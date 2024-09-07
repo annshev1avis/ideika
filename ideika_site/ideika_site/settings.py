@@ -84,6 +84,18 @@ DATABASES = {
     }
 }
 
+# DJOSER = {
+#     'SERIALIZERS': {
+#         'user': 'api.serializers.UserSerializer',
+#     },
+# }
+
+
+DJOSER = {
+    'SERIALIZERS': {
+        "user": "api.serializers.UserSerializer"
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
